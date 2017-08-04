@@ -6,6 +6,7 @@ import math
 from copy import copy, deepcopy
 import datetime
 import os
+import time
 
 import IPython.display as ipd
 digits = 3
