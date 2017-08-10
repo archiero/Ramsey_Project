@@ -1,8 +1,4 @@
 from setup import *
-import pycuda.driver as cuda
-import pycuda.autoinit
-from pycuda.compiler import SourceModule
-import pycuda.gpuarray as gpuarray
 import random
 
 def choose(k,n):
@@ -47,11 +43,9 @@ clique_list = np.ones([num_cliques_cum[-1],ramsey.max()]) * num_verts
 clique_list, clique_list_gpu = mtogpu(clique_list,'uint16')
 
 print(num_cliques_cum_gpu)
-
+#NOTE: for this code, one way to ensure it is working is to have one of the blocks print off a bunch of stuff. One easy way to turn this off is to make the PRINT_ID = 2**32-1. Since that is over twice the limit on the number of allocatable blocks on all of the GPU's in the lab, it won't print anything.  
 
 kernel_code ="""
-#include <stdio.h>
-
 extern "C"
     #include <stdio.h>
     
@@ -138,8 +132,8 @@ extern "C"
         uint clique_idx;
         get_assignment(choose_table, ramsey, num_cliques_cum, edge_idx_to_pair, edge_pair_to_idx, &clr, &clique_idx, &n_verts, verts, &n_edges, edges);        
         
-        //Everything beyone this point is optional
-        //printf("block_idx = %5u, color = %1u, n_verts = %2u, n_edges = %3u, clique_idx = %5u\\n", block_idx, clr, n_verts, n_edges, clique_idx);
+        /*Everything beyone this point is optional
+        printf("block_idx = %5u, color = %1u, n_verts = %2u, n_edges = %3u, clique_idx = %5u\\n", block_idx, clr, n_verts, n_edges, clique_idx);
         
         //print from specified block
         if(block_idx == PRINT_ID)
@@ -164,7 +158,7 @@ extern "C"
         for(i = 0; i < n_verts; i++)
         {
             clique_list[start+i] = verts[i];
-        }
+        }*/
     }
 """
 
@@ -172,7 +166,7 @@ block_dimensions=(1,1,1)
 grid_dimensions=(int(num_cliques_cum[-1]),1,1)
 
 regex_fixing_dictionary = {"NUM_VERTS":num_verts, "MAX_RAMSEY":ramsey.max(), "MAX_EDGES":num_edges_per_clique.max(),
-                          "PRINT_ID":23}
+                          "PRINT_ID":((2**32)-1)}
 for key, val in regex_fixing_dictionary.items():
     kernel_code = kernel_code.replace(str(key),str(val))
 
@@ -183,4 +177,4 @@ run(choose_table_gpu, ramsey_gpu, num_cliques_cum_gpu, edge_idx_to_pair_gpu, edg
 
 clique_list = clique_list_gpu.get().reshape(clique_list.shape)
 print()
-print(clique_list)
+#print(clique_list)

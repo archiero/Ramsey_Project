@@ -6,8 +6,8 @@ num_verts = 40
 ramsey = [3,10]
 beta = 1.2
 
-num_colorings = 32
-num_steps = 100000
+num_colorings = 2
+num_steps = 100
 report_period = 20
 
 get_cliques = False
@@ -15,7 +15,7 @@ printout = False
 print_coloring = 0
 np.random.seed(42)
 
-exec(open("ramsey_parallel.py").read())
+exec(open("count_problems_parallel.py").read())
 
 problem_counts_current = count_problems(colorings,printout)
 
@@ -91,3 +91,4 @@ for step in range(1,num_steps+1):
     if(step % report_period == 0):
         print("step:%u,  total time = %f"%(step,(time.time()-start)))
         print_status(best_step,problem_counts_best)
+

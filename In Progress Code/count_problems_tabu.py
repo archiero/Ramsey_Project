@@ -37,9 +37,7 @@ for (idx,e) in enumerate(edge_idx_to_pair):
 edge_pair_to_idx += edge_pair_to_idx.T
 np.fill_diagonal(edge_pair_to_idx,tot_edges)
 
-colorings = np.random.randint(0, num_colors, size=[num_colorings, tot_edges])
 problem_counts = np.zeros(num_colorings)
-
 
 if(get_cliques == True):
     #Optionally, return the clique list and problems to python.  TURN ME OFF for large jobs or I will eat all your brains (RAM).
@@ -57,7 +55,7 @@ choose_table_gpu, choose_table = mtogpu(choose_table,'uint64')
 num_cliques_cum_gpu, num_cliques_cum = mtogpu(num_cliques_cum,'uint64')
 edge_pair_to_idx_gpu, edge_pair_to_idx = mtogpu(edge_pair_to_idx,'uint16')
 edge_idx_to_pair_gpu, edge_idx_to_pair = mtogpu(edge_idx_to_pair,'uint16')
-colorings_gpu, colorings = mtogpu(colorings,'uint8')
+#colorings_gpu, colorings = mtogpu(colorings,'uint8')
 problem_counts_gpu, problem_counts = mtogpu(problem_counts,'uint32')
 
 clique_list_gpu, clique_list = mtogpu(clique_list,'uint8')
@@ -147,50 +145,53 @@ extern "C"
         unsigned int thread_idx_loc = threadIdx.x + threadIdx.y*blockDim.x + threadIdx.z*blockDim.x*blockDim.y;
         //unsigned int thread_idx_glob = block_idx*blockDim.x*blockDim.y*blockDim.z + thread_idx_loc;
         
-        unsigned int i, start;
-        __shared__ unsigned char color, n_verts;
-        __shared__ unsigned short n_edges;
-        __shared__ unsigned long clique_idx;
-
-        __shared__ unsigned char verts[MAX_VERTS];
-        for(i = 0; i < MAX_VERTS; i++){verts[i] = TOT_VERTS;}
-        
-        __shared__ unsigned short edges[MAX_EDGES];
-        for(i = 0; i < MAX_EDGES; i++){edges[i] = TOT_EDGES;}
-        
-        if(thread_idx_loc == 0)
+        if(block_idx < TOT_CLIQUES)
         {
-            get_assignment(choose_table, ramsey, num_cliques_cum, edge_idx_to_pair, edge_pair_to_idx, &color, &clique_idx, &n_verts, verts, &n_edges, edges);
-        
-            //Optionally, return the clique list to python.  TURN ME OFF for large jobs or I will eat all your brains (RAM).
-            if(GET_CLIQUES == 1)
-            {
-                start = block_idx * MAX_VERTS;
-                for(i = 0; i < n_verts; i++)
-                {
-                    clique_list[start+i] = verts[i];
-                }
+            unsigned int i, start;
+            __shared__ unsigned char color, n_verts;
+            __shared__ unsigned short n_edges;
+            __shared__ unsigned long clique_idx;
 
-                start = block_idx*MAX_EDGES;
-                for(i = 0; i < n_edges; i++)
+            __shared__ unsigned char verts[MAX_VERTS];
+            for(i = 0; i < MAX_VERTS; i++){verts[i] = TOT_VERTS;}
+
+            __shared__ unsigned short edges[MAX_EDGES];
+            for(i = 0; i < MAX_EDGES; i++){edges[i] = TOT_EDGES;}
+
+            if(thread_idx_loc == 0)
+            {
+                get_assignment(choose_table, ramsey, num_cliques_cum, edge_idx_to_pair, edge_pair_to_idx, &color, &clique_idx, &n_verts, verts, &n_edges, edges);
+
+                //Optionally, return the clique list to python.  TURN ME OFF for large jobs or I will eat all your brains (RAM).
+                if(GET_CLIQUES == 1)
                 {
-                    edge_list[start+i] = edges[i];                
+                    start = block_idx * MAX_VERTS;
+                    for(i = 0; i < n_verts; i++)
+                    {
+                        clique_list[start+i] = verts[i];
+                    }
+
+                    start = block_idx*MAX_EDGES;
+                    for(i = 0; i < n_edges; i++)
+                    {
+                        edge_list[start+i] = edges[i];                
+                    }
                 }
             }
+            __syncthreads();
+
+            //printf("(block_idx,thread_idx) = (%5u,%3u), color = %1u, n_verts = %2u, n_edges = %3u, clique_idx = %5u\\n", block_idx, thread_idx_loc, color, n_verts, n_edges, clique_idx);
+
+            start = thread_idx_loc * TOT_EDGES;
+            i = 0;
+            while((i < n_edges) && (colorings[start+edges[i]] == color)){i++;}
+
+            if(i >= n_edges)
+            {            
+                atomicAdd(&problem_counts[thread_idx_loc], 1);
+                if(GET_CLIQUES == 1){problems[thread_idx_loc * TOT_CLIQUES + block_idx] = 1;}
+            }
         }
-        __syncthreads();
-       
-        //printf("(block_idx,thread_idx) = (%5u,%3u), color = %1u, n_verts = %2u, n_edges = %3u, clique_idx = %5u\\n", block_idx, thread_idx_loc, color, n_verts, n_edges, clique_idx);
-       
-        start = thread_idx_loc * TOT_EDGES;
-        i = 0;
-        while((i < n_edges) && (colorings[start+edges[i]] == color)){i++;}
-        
-        if(i >= n_edges)
-        {            
-            atomicAdd(&problem_counts[thread_idx_loc], 1);
-            if(GET_CLIQUES == 1){problems[thread_idx_loc * TOT_CLIQUES + block_idx] = 1;}
-        }        
     }
 """
 
@@ -205,13 +206,15 @@ for key, val in regex_fixing_dictionary.items():
 mod = SourceModule(kernel_code)
 count_problems_gpu = mod.get_function("count_problems_gpu")
 
+w = int(np.ceil(tot_cliques**(1/3)))
+grid_dims = (w,w,w)
 block_dims = (num_colorings,1,1)
-grid_dims = (tot_cliques,1,1)
+
 #grid_dims = (int(tot_cliques**.3333 + 1), int(tot_cliques**.3333 + 1), int(tot_cliques**.3333 + 1))
 
-def count_problems(colorings, printout=False):
+def count_problems(colorings_gpu, printout=False):
     #context.synchronize()
-    colorings_gpu.set(colorings.ravel())
+    #colorings_gpu.set(colorings.ravel())
     
     count_problems_gpu(choose_table_gpu, ramsey_gpu, num_cliques_cum_gpu, edge_idx_to_pair_gpu, edge_pair_to_idx_gpu, clique_list_gpu, edge_list_gpu, colorings_gpu, problems_gpu, problem_counts_gpu, block=block_dims, grid=grid_dims, shared=0)
         
