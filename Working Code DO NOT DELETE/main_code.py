@@ -6,7 +6,7 @@ num_verts = 40
 ramsey = [3,10]
 beta = 1.2
 
-num_colorings = 2
+num_colorings =5 
 num_steps = 100
 report_period = 20
 
