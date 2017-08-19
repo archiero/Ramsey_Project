@@ -5,15 +5,15 @@
 from setup import *
 import time
 start = time.time()
-num_verts = 40
+num_verts = 30
 ramsey = [3,10]
 beta = 1.2
 tabu_length = 30
 THE_ONE_TO_KEEP = np.ones(np.int(num_verts*(num_verts-1)/2))
 
 num_colorings = 32 
-num_steps = int(np.ceil((24*3600)/90))
-report_period = 50
+num_steps = 1*(10**22) 
+report_period = 5
 
 get_cliques = False 
 printout = True
@@ -79,7 +79,7 @@ for step in range(1,num_steps+1):
     #print(problems_current)
     if problems_current == 0:
         print("step:%u,  total time = %f"%((step-1),(time.time()-start)))
-        print_status(best_step, problems_best)
+        print_status(best_step, problems_best,step)
         print_main_coloring()
         THE_ONE_TO_KEEP = coloring_best
         break

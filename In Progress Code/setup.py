@@ -8,6 +8,10 @@ import datetime
 import os
 
 import IPython.display as ipd
+
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
+
 digits = 3
 pd.options.display.chop_threshold = 10**-(digits+1)
 pd.options.display.float_format = lambda x: '{0:.{1}f}'.format(x,digits)
@@ -17,6 +21,12 @@ def display(X):
         ipd.display(pd.DataFrame(X))
     else:
         ipd.display(X)
+
+def append_to_file(objects, file):
+    #This takes a list of objects, turns them to strings
+    #and then appends them to file specified 
+    for obj in objects:
+        open(file, mode = "a").write("".join(["\n",str(obj)]))
 
 import matplotlib.pyplot as plt
 plt.style.use("classic")

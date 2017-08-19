@@ -5,84 +5,108 @@
 from setup import *
 import time
 start = time.time()
-num_verts = 6 
-ramsey = [3,3]
+num_verts = 40 
+ramsey = [3,10]
+
 beta = 1.2
+tabu_length = 30
 THE_ONE_TO_KEEP = np.ones(np.int(num_verts*(num_verts-1)/2))
 
-num_colorings =5 
-num_steps = 100
-report_period = 20
+num_colorings = 8 
+num_steps = 1#5*(10**3)
+report_period = 100
 
-get_cliques = False
-printout = True
+get_cliques = False 
+printout = False 
 print_coloring = 0
-np.random.seed(42)
+#np.random.seed(142)
 
 exec(open("count_problems_tabu.py").read())
-main_coloring = np.random.randint(0, num_colors, size = tot_edges)
-#Recall that the blocks are set up so that each one block checks one clique each and that the different threads check different colorings. So, in order to just check one, we're going to change the block dim to reflect this and then change it back.
+
+main_coloring = np.random.randint(0, num_colors, size = tot_edges).astype('uint8')
 #This is the array housing all of the neighbors
 colorings = np.zeros((num_colorings, tot_edges)).astype("uint8")
+#We're to make the first coloring in colorings the main_coloring. This way, we can count the problems for it easily with changing the kernel call at all
+colorings[0] = main_coloring
+colorings[-1] = np.ones(tot_edges).astype('uint8')
+problems_proposed = count_problems(colorings, printout)
+#This is an array making sure that the problem checking algorithm is working fine. It sends down one blue monochromatic and one red monochromatic and makes sure it comes up with the right number of problems. 
+print(problems_proposed[-1], problems_proposed[-2])
+print(binom(num_verts,ramsey[-1]),binom(num_verts,ramsey[-2]))
+lowest_proposed = problems_proposed[0]
+coloring_proposed = 0
 
-block_dims = (1,1,1)
-main_coloring_gpu, main_coloring = mtogpu(main_coloring, 'uint8')
-
-problems_proposed = count_problems(main_coloring_gpu, printout)
-block_dims = (num_colorings,1,1)
-
-lowest_proposed = np.max(problems_proposed)
-coloring_proposed = np.argmax(problems_proposed)
 problems_current = lowest_proposed.copy()
 problems_best = lowest_proposed.copy()
-colorings_best = main_coloring.copy 
-index_best = coloring_proposed.copy()
+coloring_best = main_coloring.copy() 
 best_step = 0
+step = 0
 
-def print_colorings(idx=None):
-    df = pd.DataFrame(colorings)
-    df.columns = [tuple(e) for e in edge_idx_to_pair]
-    if idx is not None:
-        df = df.loc[idx]    
-    display(df)
-
-
-def print_status(best_step,problem_counts_best):
-    df = pd.DataFrame()
-    df['best step'] = best_step
-    df['problems'] = problem_counts_best
+def print_main_coloring():
+    df = pd.DataFrame(main_coloring)
     df = df.T
-    idx = np.argmin(problem_counts_best)#.argmin()
-    s = 'best='+str(idx)
-    df[s] = df[idx]
+    df.columns = [tuple(e) for e in edge_idx_to_pair]
+    #if idx is not None:
+    #    df = df.loc[idx]    
     display(df)
 
-#print("step:%u,  total time = %f"%(0,(time.time()-start)))
-#print_status(best_step,problem_counts_best)
+def print_status(best_step,problems_best,step):
+    df = pd.DataFrame()
+    total_time = time.time() - start
+    df['best step'] = [best_step]
+    df['problems'] = [problems_best]
+#    if(step !=0):
+#        df["rate"] = [total_time/step]
+#    else:
+#        df["rate"] = [total_time]
+    df['rate'] = [total_time/(step+1)]
+    #df = df.T
+    #idx = index_best 
+    #s = 'best='+str(idx)
+    #df[s] = df[idx]
+    display(df)
+
+print("step:%u,  total time = %f"%(0,(time.time()-start)))
+print_status(best_step,problems_best,step)
+
 edges_array = np.arange(tot_edges)
-tabu_list = np.zeros((2,tot_edges))
+tabu_list = np.zeros((tabu_length,tot_edges))
 tabu_list[0] = main_coloring.copy()
-#tabu_list = np.zeros((100,tot_edges))
+
 print("Begin Markov Chain")
 edge_color_old = np.zeros(num_colorings).astype('uint8')
+
 for step in range(1,num_steps+1):
-    #found = (problem_counts_current == 0)
-    print(problems_current)
-    if problems_current ==0:#np.any(found):
-        #found = found.nonzero()
-        print("FOUND AT LEAST ONE WITH NO PROBLEMS: %s"%index_best)
+    #print(problems_current)
+    if problems_current >= 0:             
         print("step:%u,  total time = %f"%((step-1),(time.time()-start)))
-        print_status(best_step, problems_best)
-        print_colorings(index_best)
+        print_status(best_step, problems_best,step)
+        print_main_coloring()
         THE_ONE_TO_KEEP = coloring_best
+        #This will record the ramsey number we're looking for and the number of vertices as a comment above the coloring claiming to be problem free. 
+        comment = "#Ramsey is RAMSEY and num_verts is NUM_VERTS"
+        comment_fixing_dictionary = {"RAMSEY":ramsey, "NUM_VERTS":num_verts}
+        for key, value in comment_fixing_dictionary.items():
+            comment = comment.replace(str(key),str(value))\
+        #This will save the main coloring as an np.array under the name coloring to the appropiate places. It takes main_coloring turns it into a string of the form "[1 0 1 ... 0]", replaces the spaces with commas (thus this will literally write to a .py file [1,0,1,...,0] a.k.a. a list of the appropiate values and length) and attaches a command to save it as an np.array for dumbsey to process. 
+        #append_to_file takes all of the objects in the list and appends it to a new line in the appropiate file
+        main_coloring = "".join(["coloring = np.array(" , str(main_coloring).replace(" ",",") , ")"])
+        #I'm not sure why the following line only works for some stuff. It does though.
+        #ramsey = "".join(["ramsey = ",str(ramsey).replace(" ",",")])
+        Ramsey = ["ramsey = ["]
+        for ram in ramsey:
+            Ramsey.append(str(ram))
+            Ramsey.append(",")
+        Ramsey[-1] = "]"
+        ramsey = "".join(Ramsey)
+        num_verts = "".join(["num_verts = ",str(num_verts)])
+        print(ramsey)
+        print(num_verts)
+        #This command setups the problem_free.py file and saves as the very first line "from setup.py import *"
+        open("problem_free.py", mode = "w").write("from setup import *")
+        append_to_file([comment,ramsey,num_verts,main_coloring,open("double_check_coloring.py", mode = "r").read()],file="problem_free.py") 
         break
         
-#    change_edges = np.random.choice(edges_array, size = num_colorings)
-#    delta_color = np.random.randint(1, num_colors, size=num_colorings).astype('uint8')    
-#    for c in range(num_colorings):
-#        e = change_edges[c]
-#        edge_color_old[c] = colorings[c,e]
-#        colorings[c,e] = ((colorings[c,e] + delta_color[c]) % num_colors)
     change_edges = np.zeros(num_colorings).astype('uint16')
     delta_color = np.zeros(num_colorings).astype('uint8')    
     c = 0
@@ -98,32 +122,36 @@ for step in range(1,num_steps+1):
         edge_color_old[c] = colorings[c,e]
         colorings[c,e] = ((colorings[c,e] + delta_color[c]) % num_colors)
 	#First, check to see if the neighbor is on the tabu list
-        if(np.any([np.array_equal(colorings[c],tabu_list[i]) for i in range(len(tabu_list))]) == False):
+        if(np.any([np.array_equal(colorings[c],tabu_list[i]) for i in range(tabu_length)]) == False):
             #Now, check to see if this neighbor has been grabbed before:
             if(np.any([np.array_equal(colorings[c], colorings[i]) for i in range(c)]) == False):
                 c+= 1
-        #If either of these conditions fail, find another random neighbor
-        if attempt >= 10:
+                #If either of these conditions fail, c doesn't go up one and we find another random neighbor
+        #Note, I put it here so we wouldn't ever get stuck in an endess while-loop and there's a minimal chance of this condition ever breaking the command because the loop just happened to take a long time.
+        if attempt >= 100:#tabu_length*num_colorings:
             raise Exception("SOMETHINGS UP WITH THE TABU LIST")
-    #Note: at any given time, for R(3,10), tabu_list of size 100 and 32 neighbors to check, there is at most a (100 + 31)/780 = 16.8% chance of the process repeating itself. 
+    #Count all of the problems in the randomly generate neighbors and keep the one with the lowest problems 
     problem_counts_gpu *= 0
     problems_proposed = count_problems(colorings,printout)
     lowest_proposed = np.min(problems_proposed)
     coloring_proposed = np.argmin(problems_proposed)
    
     if(lowest_proposed <= problems_current):
+#         print("problems_current: %u lowest_proposed: %u step %u"%(problems_current, lowest_proposed, step))
          main_coloring = colorings[coloring_proposed].copy()
          problems_current = lowest_proposed.copy()
-         if problems_best >= lowest_proposed:
+         if problems_best > lowest_proposed:
+#             print("We have a new best!!!!!!! The previous happened on step %u"%(best_step))
              problems_best = lowest_proposed.copy()
-             best_coloring = colorings[coloring_proposed].copy()
-             best_step = step.copy()
-             index_best = coloring_proposed.copy()
+             coloring_best = colorings[coloring_proposed].copy()
+             best_step = step           
     else:
          prob_diff = problems_current = lowest_proposed
          accept = np.exp(-1 * beta * prob_diff)
-         rand = np.random.random()
-         if rand <= accept:
+         Maryam = np.random.random()
+#         print("It wasn't better. If I get below %u, I accept and I got %u"%(accept, Maryam))
+         if Maryam <= accept:
+#             print("I accepted")
              main_coloring = colorings[coloring_proposed].copy()
              problems_current = lowest_proposed.copy()
     #Recall, we start with tabu_list[0] = first coloring and step = 1. So, to have tabu_list[1] be equal to coloring after we've taken the first step and then update at the appropiate point, have it to be saved here. 
@@ -131,5 +159,5 @@ for step in range(1,num_steps+1):
     
     if(step % report_period == 0):
         print("step:%u,  total time = %f"%(step,(time.time()-start)))
-        print_status(best_step,problem_counts_best)
-
+        print_status(best_step, problems_best,step)
+exec(open("problem_free.py").read())

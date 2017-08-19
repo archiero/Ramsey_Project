@@ -16,8 +16,6 @@ import pycuda.curandom as curandom
 #2. Be explicit about dtype.  Those Python is very forgiving, Cuda is not.
 #See https://wiki.tiker.net/PyCuda/FrequentlyAskedQuestions?action=fullsearch&context=180&value=data+type&titlesearch=Titles#How_do_I_specify_the_correct_types_when_calling_and_preparing_PyCUDA_functions.3F
 
-
-
 def mtogpu(arr, dtype=None):
     arr = np.asarray(arr)
     if dtype is not None:        

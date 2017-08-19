@@ -8,9 +8,11 @@ import numpy as np
 import pandas as pd
 import math 
 import IPython as ipd
-
+import sys
 idx = pd.IndexSlice
 
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
 
 digits = 3
 pd.options.display.chop_threshold = 10**-(digits+1)

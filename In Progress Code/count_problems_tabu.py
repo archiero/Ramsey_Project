@@ -3,21 +3,42 @@ from pycuda_setup import *
 from scipy.special import binom
 import time
 
-# num_verts = 40
-# ramsey = [3,10]
-# num_colorings = 1
+num_verts = 40
+ramsey = [3,10]
+num_colorings = 1
 # num_steps = 1
 # beta = 0.5
-
-# get_cliques = False
-# printout = False
+coloring = np.array([0,0,0,0,1,0,1,1,1,1,0,1,1,0,0,0,0,1,1,0,0,1,0,0,1,1,0,0,1,1,0,0,0,1,1,0,0  
+,1,1,1,0,0,1,0,0,0,0,0,1,0,0,1,0,1,0,0,0,1,1,0,0,0,0,0,1,1,1,1,0,1,1,0,1,1
+,0,1,1,1,0,0,1,0,0,1,1,0,0,0,0,0,0,1,1,0,1,1,0,0,1,0,1,1,1,0,0,0,0,0,1,1,0
+,0,1,1,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,0,0,1,1,1,0,0,0,1,1,1,0,1,0
+,0,0,0,0,1,1,0,1,1,0,0,1,0,1,0,1,0,1,1,0,1,1,0,0,1,1,1,0,1,1,0,1,1,0,1,1,0
+,1,1,1,0,0,1,0,0,0,0,1,1,1,1,1,1,1,0,0,1,1,0,0,1,0,0,1,0,0,0,0,0,1,0,1,1,0
+,1,1,0,1,0,0,1,0,0,1,0,0,1,0,0,1,1,0,1,1,0,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0
+,1,1,0,1,0,0,1,0,1,0,1,1,1,0,1,0,0,1,0,1,0,1,1,0,1,0,1,1,0,1,1,1,1,0,0,0,1
+,1,0,1,1,1,1,0,0,1,1,1,0,1,1,0,0,1,0,1,1,0,0,1,0,0,1,0,1,0,0,0,1,1,1,0,0,1
+,0,0,0,1,0,0,1,0,1,0,1,1,1,1,1,0,0,1,0,1,1,0,1,1,0,1,1,0,0,1,1,1,1,1,0,1,0
+,0,1,1,1,1,0,1,0,1,1,1,0,1,1,0,1,0,0,0,1,0,0,0,0,0,0,0,1,0,1,0,1,0,1,1,0,0
+,1,0,1,1,1,0,1,0,0,0,1,1,0,1,1,1,0,0,1,0,1,0,1,1,1,0,0,1,0,1,1,1,1,0,1,0,0
+,0,1,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,0,1,0,0,1,0,0,0,1,0,1,0,0,1,0,0,1,1
+,0,1,0,0,1,1,1,1,0,0,0,1,0,1,0,1,0,1,1,0,0,1,0,0,0,1,0,1,1,0,0,0,1,1,1,1,0
+,1,0,0,0,0,0,0,0,0,1,1,0,0,1,0,1,0,0,0,0,0,1,1,0,0,0,0,0,1,1,1,0,0,1,0,0,0
+,0,0,0,0,1,1,1,0,1,0,0,0,1,1,1,1,1,0,1,0,0,1,0,0,0,0,1,0,0,0,1,0,0,0,1,1,0
+,0,1,0,0,1,0,0,0,0,1,1,0,1,1,1,0,0,0,1,0,1,1,1,0,1,1,0,0,0,0,1,1,0,1,1,0,0
+,0,1,1,1,0,0,1,1,1,0,0,0,1,0,1,1,0,1,0,1,1,0,1,1,0,1,0,1,0,1,1,1,1,1,0,0,0
+,1,1,1,0,1,1,1,0,0,0,1,0,1,0,0,1,1,1,1,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,0,1,1
+,0,1,1,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,1,1,1,0,1,1,1,1,0,0,1,1,1,1,0,1,1,0,0
+,1,0,1,0,0,1,0,0,0,1,0,1,0,0,0,0,0,1,0,0,1,0,1,1,0,1,1,1,1,1,0,0,1,1,0,1,0
+,1,0,1])
+ 
+get_cliques = False
+printout = False
 # print_coloring = 0
 # np.random.seed(42)
-
-
-ramsey = np.asarray(ramsey)
-ramsey.sort()
+                                                                                                         
+ramsey.sort()                      
 tot_verts = int(num_verts)
+ramsey = np.asarray(ramsey) 
 num_colors = len(ramsey)
 num_verts_per_clique = ramsey
 biggus_clickus = ramsey.max()  #If you did not just laugh, you need to get a life (of brian) - https://www.youtube.com/watch?v=zPGb4STRfKw
@@ -210,14 +231,12 @@ w = int(np.ceil(tot_cliques**(1/3)))
 grid_dims = (w,w,w)
 block_dims = (num_colorings,1,1)
 
-#grid_dims = (int(tot_cliques**.3333 + 1), int(tot_cliques**.3333 + 1), int(tot_cliques**.3333 + 1))
-
-def count_problems(colorings_gpu, printout=False):
+def count_problems(colorings, printout=False):
     #context.synchronize()
     #colorings_gpu.set(colorings.ravel())
-    
+    colorings_gpu, colorings = mtogpu(colorings, 'uint8')
     count_problems_gpu(choose_table_gpu, ramsey_gpu, num_cliques_cum_gpu, edge_idx_to_pair_gpu, edge_pair_to_idx_gpu, clique_list_gpu, edge_list_gpu, colorings_gpu, problems_gpu, problem_counts_gpu, block=block_dims, grid=grid_dims, shared=0)
-        
+    
     if(get_cliques == True):
         clique_list = clique_list_gpu.get().reshape([tot_cliques,-1])
         edge_list = edge_list_gpu.get().reshape([tot_cliques,-1])
@@ -227,13 +246,7 @@ def count_problems(colorings_gpu, printout=False):
                 e_idx = e[e<tot_edges]                
                 #print("%3u  %s  %s  %s  %u"%(i, c, e, colorings[print_coloring,e_idx], problems[print_coloring,i])) 
                 print("%3u  %s  %u"%(i, colorings[print_coloring,e_idx], problems[print_coloring,i]))
+    return problem_counts_gpu.get()        
 
-    return problem_counts_gpu.get()
-
-# num_problems, problems = count_problems(colorings,printout=False)
-# num_problems, problems = count_problems(colorings,printout=True)
-# print(num_problems)
-
-
-# end = time.time()
-# print("time = %f"%(end-start))
+problems = count_problems(coloring)
+print(problems) 
