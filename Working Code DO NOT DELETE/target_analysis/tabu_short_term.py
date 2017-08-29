@@ -48,8 +48,6 @@ def print_main_coloring():
     df = pd.DataFrame(main_coloring)
     df = df.T
     df.columns = [tuple(e) for e in edge_idx_to_pair]
-    #if idx is not None:
-    #    df = df.loc[idx]    
     display(df)
 
 def print_status(best_step,problems_best,step):
@@ -57,15 +55,7 @@ def print_status(best_step,problems_best,step):
     total_time = time.time() - start
     df['best step'] = [best_step]
     df['problems'] = [problems_best]
-#    if(step !=0):
-#        df["rate"] = [total_time/step]
-#    else:
-#        df["rate"] = [total_time]
     df['rate'] = [total_time/(step+1)]
-    #df = df.T
-    #idx = index_best 
-    #s = 'best='+str(idx)
-    #df[s] = df[idx]
     display(df)
 
 print("step:%u,  total time = %f"%(0,(time.time()-start)))
@@ -79,7 +69,6 @@ print("Begin Markov Chain")
 edge_color_old = np.zeros(num_colorings).astype('uint8')
 
 for step in range(1,num_steps+1):
-    #print(problems_current)
     if problems_current == 0:             
         print("step:%u,  total time = %f"%((step-1),(time.time()-start)))
         print_status(best_step, problems_best,step)
@@ -109,10 +98,10 @@ for step in range(1,num_steps+1):
         print(num_verts)
         #This command setups the problem_free.py file and saves as the very first line "from setup.py import *"
         if double_check == True:
-            open("problem_free.py", mode = "w").write("from setup import *")
-        append_to_file([comment,ramsey,num_verts,main_coloring],file="problem_free.py")
+            open("cliques_to_data_mine.py", mode = "w").write("from setup import *")
+        append_to_file([comment,ramsey,num_verts,main_coloring],file="cliques_to_data_mine.py")
         if double_check == True:
-           append_to_file([open("double_check_coloring.py", mode = "r").read()], file = "problem_free.py")   
+           append_to_file([open("double_check_coloring.py", mode = "r").read()], file = "cliques_to_data_mine.py")   
         break
         
     change_edges = np.zeros(num_colorings).astype('uint16')
@@ -136,7 +125,7 @@ for step in range(1,num_steps+1):
                 c+= 1
                 #If either of these conditions fail, c doesn't go up one and we find another random neighbor
         #Note, I put it here so we wouldn't ever get stuck in an endess while-loop and there's a minimal chance of this condition ever breaking the command because the loop just happened to take a long time.
-        if attempt >= 100:#tabu_length*num_colorings:
+        if attempt >= tabu_length*num_colorings:
             raise Exception("SOMETHINGS UP WITH THE TABU LIST")
     #Count all of the problems in the randomly generate neighbors and keep the one with the lowest problems 
     problem_counts_gpu *= 0

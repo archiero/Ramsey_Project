@@ -1,3 +1,2 @@
 #This folder is for target analysis stuff. In general, if we wanted to generate a bunch of cliques to target analyze, this has all of the different scripts required to do so. Also, since it has a bunch of different interconnected stuff, I thought it'd be better to have it in it's own subdirectory
 #All of the files have one or two sentence descriptions of what I want to accomplish in the code. 
-#To collect cliques to analyze, run the collect_cliques.py. 

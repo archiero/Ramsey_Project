@@ -1,3 +1,5 @@
+#Once tabu_short_term appends Ramsey, num_verts and the coloring to a file, this will get appended. Once it runs, it will run dumbsey to double-check the number of problems
+
 from scipy.special import binom
 #from setup import *
 ramsey = np.asarray(ramsey)

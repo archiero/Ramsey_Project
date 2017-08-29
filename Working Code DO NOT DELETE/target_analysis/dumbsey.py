@@ -1,5 +1,7 @@
-#from setup import *
-#from scipy.special import binom
+#This is the dumbest and slowest way to count problems. This is the core idea of the problem checking algorithms and needs to be kept for clarity's sake
+
+from setup import *
+from scipy.special import binom
 
 #num_verts = 20
 #ramsey = [3,10]

@@ -1,3 +1,5 @@
+#This code uses PyCUDA to count the number of problems on the GPU. It is called and run on the tabu_short_term.py code.
+
 from setup import *
 from pycuda_setup import *
 from scipy.special import binom
