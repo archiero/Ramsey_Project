@@ -1,8 +1,15 @@
-from scipy.special import binom
 #from setup import *
+#from scipy.special import binom
+
+#num_verts = 20
+#ramsey = [3,10]
+#num_colorings = 1
+
+num_verts = 5
+ramsey = [3,3] 
 ramsey = np.asarray(ramsey)
 ramsey.sort()
-
+colorings = np.array([[1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 2]])
 tot_verts = num_verts
 tot_edges = binom(tot_verts,2)
 
@@ -12,8 +19,7 @@ for (idx,e) in enumerate(edge_idx_to_pair):
     edge_pair_to_idx[tuple(e)] = idx
 edge_pair_to_idx += edge_pair_to_idx.T
 np.fill_diagonal(edge_pair_to_idx,tot_edges)
-#checker = 0
-#check = 10**5
+
 
 prob_count = 0
 for i, ram in enumerate(ramsey):
@@ -24,11 +30,8 @@ for i, ram in enumerate(ramsey):
         for k,edge in enumerate(edges):
             edge_idx = np.int(edge_pair_to_idx[tuple(edge)])
             #c.append(colorings[0,edge_idx])
-            c[k] = coloring[edge_idx]
+            c[k] = colorings[0,edge_idx]
         if np.all(c == i) == True:
-            #print("clr%u  clique%u  verts%s  edges%s  colors%s "%(i,j,v,edge,c))
+            print("clr%u  clique%u  verts%s  edges%s  colors%s "%(i,j,v,edge,c))
             prob_count += 1
-#        checker += 1
-#        if checker%check == 0:
-#            print("I'm still here %u"%(checker))
 print("number of problems are %u"%(prob_count))
