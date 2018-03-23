@@ -5,15 +5,15 @@
 from setup import *
 import time
 start = time.time()
-num_verts = 30
+num_verts = 40
 ramsey = [3,10]
 
 beta = 1.2
 tabu_length = 30
 THE_ONE_TO_KEEP = np.ones(np.int(num_verts*(num_verts-1)/2))
 
-num_colorings = 32 
-num_steps = 5*(10**3)
+num_colorings = 2 
+num_steps = 1*(10**0)
 report_period = 100
 
 get_cliques = False 
@@ -24,17 +24,16 @@ print_coloring = 0
 #np.random.seed(142)
 
 exec(open("count_problems_tabu.py").read())
+#This sets up the neural net training
+open('Ramsey_3_10_40_NN_training.py', mode = 'w').write('data = []\ntarget = []')
 
 main_coloring = np.random.randint(0, num_colors, size = tot_edges).astype('uint8')
 #This is the array housing all of the neighbors
 colorings = np.zeros((num_colorings, tot_edges)).astype("uint8")
-#We're to make the first coloring in colorings the main_coloring. This way, we can count the problems for it easily with changing the kernel call at all
+#We're to make the first coloring in colorings the main_coloring. This way, we can count the problems for it easily with out changing the kernel call at all
 colorings[0] = main_coloring
 colorings[-1] = np.ones(tot_edges).astype('uint8')
 problems_proposed = count_problems(colorings, printout)
-#This is an array making sure that the problem checking algorithm is working fine. It sends down one blue monochromatic and one red monochromatic and makes sure it comes up with the right number of problems. 
-print(problems_proposed[-1], problems_proposed[-2])
-print(binom(num_verts,ramsey[-1]),binom(num_verts,ramsey[-2]))
 lowest_proposed = problems_proposed[0]
 coloring_proposed = 0
 
@@ -80,40 +79,40 @@ edge_color_old = np.zeros(num_colorings).astype('uint8')
 
 for step in range(1,num_steps+1):
     #print(problems_current)
-    if problems_current == 0:             
-        print("step:%u,  total time = %f"%((step-1),(time.time()-start)))
-        print_status(best_step, problems_best,step)
-        print_main_coloring()
-        THE_ONE_TO_KEEP = coloring_best
+#    if problems_current == 0:             
+#        print("step:%u,  total time = %f"%((step-1),(time.time()-start)))
+#        print_status(best_step, problems_best,step)
+#        print_main_coloring()
+#        THE_ONE_TO_KEEP = coloring_best
         #This will record the ramsey number we're looking for and the number of vertices as a comment above the coloring claiming to be problem free. 
-        comment = "#Ramsey is RAMSEY and num_verts is NUM_VERTS"
-        comment_fixing_dictionary = {"RAMSEY":ramsey, "NUM_VERTS":num_verts}
-        for key, value in comment_fixing_dictionary.items():
-            comment = comment.replace(str(key),str(value))\
+#        comment = "#Ramsey is RAMSEY and num_verts is NUM_VERTS"
+#        comment_fixing_dictionary = {"RAMSEY":ramsey, "NUM_VERTS":num_verts}
+#        for key, value in comment_fixing_dictionary.items():
+#            comment = comment.replace(str(key),str(value))\
         #This will save the main coloring as an np.array under the name coloring to the appropiate places. It takes main_coloring turns it into a string of the form "[1 0 1 ... 0]", replaces the spaces with commas (thus this will literally write to a .py file [1,0,1,...,0] a.k.a. a list of the appropiate values and length) and attaches a command to save it as an np.array for dumbsey to process. 
         #append_to_file takes all of the objects in the list and appends it to a new line in the appropiate file
-        if double_check == True:
-            main_coloring = "".join(["coloring = np.array(" , str(main_coloring).replace(" ",",") , ")"])
-        elif double_check == False:
-            main_coloring = "".join(["coloring.append(np.array(", str(main_coloring).replace(" ",",") , "))"])
+#        if double_check == True:
+#            main_coloring = "".join(["coloring = np.array(" , str(main_coloring).replace(" ",",") , ")"])
+#        elif double_check == False:
+#            main_coloring = "".join(["coloring.append(np.array(", str(main_coloring).replace(" ",",") , "))"])
         #The reason why the following simpler, neater line was replaced is because, as far as I have been able to tell, numpy has appearance function imbedded. So, [3,3] prints out as a string exactly as "[3 3]" but [3,10] prints as "[ 3 10]" and, in similar fashion, [3,100] prints as "[  3 100]". Not sure why but it does and it's the reason why the for-loop is currently running. 
         #ramsey = "".join(["ramsey = ",str(ramsey).replace(" ",",")])
-        Ramsey = ["ramsey = ["]
-        for ram in ramsey:
-            Ramsey.append(str(ram))
-            Ramsey.append(",")
-        Ramsey[-1] = "]"
-        ramsey = "".join(Ramsey)
-        num_verts = "".join(["num_verts = ",str(num_verts)])
-        print(ramsey)
-        print(num_verts)
-        #This command setups the problem_free.py file and saves as the very first line "from setup.py import *"
-        if double_check == True:
-            open("problem_free.py", mode = "w").write("from setup import *")
-        append_to_file([comment,ramsey,num_verts,main_coloring],file="problem_free.py")
-        if double_check == True:
-           append_to_file([open("double_check_coloring.py", mode = "r").read()], file = "problem_free.py")   
-        break
+#        Ramsey = ["ramsey = ["]
+#        for ram in ramsey:
+#            Ramsey.append(str(ram))
+#            Ramsey.append(",")
+#        Ramsey[-1] = "]"
+#        ramsey = "".join(Ramsey)
+#        num_verts = "".join(["num_verts = ",str(num_verts)])
+#        print(ramsey)
+#        print(num_verts)
+#        #This command setups the problem_free.py file and saves as the very first line "from setup.py import *"
+#        if double_check == True:
+#            open("problem_free.py", mode = "w").write("from setup import *")
+#        append_to_file([comment,ramsey,num_verts,main_coloring],file="problem_free.py")
+#        if double_check == True:
+#           append_to_file([open("double_check_coloring.py", mode = "r").read()], file = "problem_free.py")   
+#        break
         
     change_edges = np.zeros(num_colorings).astype('uint16')
     delta_color = np.zeros(num_colorings).astype('uint8')    
@@ -136,13 +135,22 @@ for step in range(1,num_steps+1):
                 c+= 1
                 #If either of these conditions fail, c doesn't go up one and we find another random neighbor
         #Note, I put it here so we wouldn't ever get stuck in an endess while-loop and there's a minimal chance of this condition ever breaking the command because the loop just happened to take a long time.
-        if attempt >= 100:#tabu_length*num_colorings:
+        if attempt >= tabu_length*num_colorings:
             raise Exception("SOMETHINGS UP WITH THE TABU LIST")
     #Count all of the problems in the randomly generate neighbors and keep the one with the lowest problems 
     problem_counts_gpu *= 0
     problems_proposed = count_problems(colorings,printout)
     lowest_proposed = np.min(problems_proposed)
     coloring_proposed = np.argmin(problems_proposed)
+
+    for i in range(num_colorings):
+        coloring = colorings[i]
+        coloring = "".join(["data.append(np.array(" , str(coloring).replace(" ",",") , "))"])
+        target = problems_proposed[i]
+        target = "".join(["target.append(",str(target),")"])
+        print(problems_proposed[i])
+    append_to_file([coloring,target],'Ramsey_3_10_40_NN_training.py')
+        
    
     if(lowest_proposed <= problems_current):
 #         print("problems_current: %u lowest_proposed: %u step %u"%(problems_current, lowest_proposed, step))

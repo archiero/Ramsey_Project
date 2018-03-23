@@ -13,7 +13,7 @@ tabu_length = 30
 THE_ONE_TO_KEEP = np.ones(np.int(num_verts*(num_verts-1)/2))
 
 num_colorings = 32 
-num_steps = 5*(10**3)
+num_steps = 5*(10**5)
 report_period = 100
 
 get_cliques = False 

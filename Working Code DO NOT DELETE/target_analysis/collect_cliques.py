@@ -3,7 +3,7 @@
 from setup import *
 now = datetime.datetime.now()
 open("cliques_to_data_mine.py", mode = "w").write("from setup import *\ncoloring = []")
-for i in range(50):
+for i in range(150):
     exec(open("tabu_short_term.py", mode = "r").read())
 append_to_file(["coloring = np.asarray(coloring)"], "cliques_to_data_mine.py")
 print(datetime.datetime.now() - now)

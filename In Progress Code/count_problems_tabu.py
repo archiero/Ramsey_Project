@@ -2,9 +2,9 @@ from setup import *
 from pycuda_setup import *
 from scipy.special import binom
 import time
-                                                                                                         
+
+tot_verts = int(num_verts)                                                                                                     
 ramsey.sort()                      
-tot_verts = int(num_verts)
 ramsey = np.asarray(ramsey) 
 num_colors = len(ramsey)
 num_verts_per_clique = ramsey

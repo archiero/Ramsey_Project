@@ -1,19 +1,20 @@
-#from setup import *
-from __future__ import division
-import datetime
-import os
-import itertools as it
-import shutil
-import random
-import copy
-import numpy as np
-import pandas as pd
-import math 
-import pycuda.driver as cuda
-import pycuda.autoinit
-from collections import Counter
-from pycuda.compiler import SourceModule
-import pycuda.gpuarray as gpuarray
+from setup import *
+from pycuda_setup import *
+#from __future__ import division
+#import datetime
+#import os
+#import itertools as it
+#import shutil
+#import random
+#import copy
+#import numpy as np
+#import pandas as pd
+#import math 
+#import pycuda.driver as cuda
+#import pycuda.autoinit
+#from collections import Counter
+#from pycuda.compiler import SourceModule
+#import pycuda.gpuarray as gpuarray
 
 def main_random(Ramsey, num_vertices, num_steps, beta=2):
     start_time = datetime.datetime.now()
@@ -171,18 +172,18 @@ def main_random(Ramsey, num_vertices, num_steps, beta=2):
     #if and only if the first num_edges_per_clique "valid" entries also match.
     #Thus the extra columns do NOT alter the "problem status" for valid rows, as desired.
 
-    #compare = np.full_like(assign_Blocks_to_Cliques, fill_value=num_colors)
-    #print(assign_Blocks_to_Cliques.shape)
-    #for block in range(num_blocks):
-    #    compare[block,:,:block_edges_per_clique[block]] = block_color[block]
-    #
-    #def find_problems_pandas(coloring, printout=False):
-    #    X = coloring[assign_Blocks_to_Cliques]
-    #    Y = (X == compare)
-    #    Problems = np.all(Y,axis=-1)
-    #    if printout == True:
-    #        print_problems(Problems)
-    #    return Problems.sum().astype('int'), Problems
+    compare = np.full_like(assign_Blocks_to_Cliques, fill_value=num_colors)
+    print(assign_Blocks_to_Cliques.shape)
+    for block in range(num_blocks):
+        compare[block,:,:block_edges_per_clique[block]] = block_color[block]
+    
+    def find_problems_pandas(coloring, printout=False):
+        X = coloring[assign_Blocks_to_Cliques]
+        Y = (X == compare)
+        Problems = np.all(Y,axis=-1)
+        if printout == True:
+            print_problems(Problems)
+        return Problems.sum().astype('int'), Problems
 
     def print_problems(Problems):        
         Z = pd.DataFrame(Problems.astype('uint32'))
@@ -215,12 +216,12 @@ def main_random(Ramsey, num_vertices, num_steps, beta=2):
     Problems_gpu = gpuarray.to_gpu(np.zeros(assign_Blocks_to_Cliques.shape[:-1]).astype("uint32"))
 
     #num_problems_current, Problems_current = find_problems_pandas(coloring_cpu, printout=False)
-    #num_problems_current, Problems_current = find_problems_cuda(coloring_gpu, get_from_gpu=True, printout=False)
-    num_problems_current, _ = find_problems_cuda(coloring_gpu, get_from_gpu=False, printout=False)    
+    num_problems_current, Problems_current = find_problems_cuda(coloring_gpu, get_from_gpu=True, printout=False)
+    #num_problems_current, _ = find_problems_cuda(coloring_gpu, get_from_gpu=False, printout=False)    
     num_problems_proposed = num_problems_current    
     num_problems_best = num_problems_current
-    #Problems_proposed = Problems_current.copy()
-    #Problems_best = Problems_current.copy()
+    Problems_proposed = Problems_current.copy()
+    Problems_best = Problems_current.copy()
     red = min(vertices_per_clique)
     step = 0
     step_best = step
@@ -247,12 +248,12 @@ def main_random(Ramsey, num_vertices, num_steps, beta=2):
 #         It is commented out by default because it slows things down.
 #         If you want to use it, you also need to uncomment several lines above to activate the pandas algorithm.
 
-        #num_problems_proposed, Problems_proposed_pandas = find_problems_pandas(coloring_cpu)#, printout=True)
-        #num_problems_proposed, Problems_proposed_cuda = find_problems_cuda(coloring_gpu, get_from_gpu=True, printout=False)
-        #if np.all(Problems_proposed_pandas == Problems_proposed_cuda) == True:
-        #    print("Pandas and Cuda agree!!")
-        #else:
-        #    raise Exception("Pandas and Cuda disagree :()")
+        num_problems_proposed, Problems_proposed_pandas = find_problems_pandas(coloring_cpu)#, printout=True)
+        num_problems_proposed, Problems_proposed_cuda = find_problems_cuda(coloring_gpu, get_from_gpu=True, printout=False)
+        if np.all(Problems_proposed_pandas == Problems_proposed_cuda) == True:
+            print("Pandas and Cuda agree!!")
+        else:
+            raise Exception("Pandas and Cuda disagree :()")
             
         num_problems_proposed, _ = find_problems_cuda(coloring_gpu, get_from_gpu=False, printout=False)
         num_problems_diff = num_problems_current - num_problems_proposed
@@ -308,5 +309,5 @@ def main_random(Ramsey, num_vertices, num_steps, beta=2):
     return final_coloring
 Ramsey = [5,5]
 num_vertices = 43
-num_steps = 37929600*7#This should take almost exactly 7 days to accomplish
+num_steps = 200#37929600*7#This should take almost exactly 7 days to accomplish
 bill = main_random(Ramsey,num_vertices, num_steps)
